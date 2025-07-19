@@ -115,16 +115,14 @@
   const monthSelector = document.getElementById("monthSelector");
 
   const passcodes = { A: "123A", B: "123B", C: "123C" };
+  const names = { A: "Bhushan", B: "Dheeraj", C: "Saurabh" };
 
   function unlock(person) {
-    const entered = prompt("Enter passcode for Person " + person);
+    const entered = prompt("Enter passcode");
     if (entered === passcodes[person]) {
-      document.querySelectorAll(".d" + person.toLowerCase()).forEach(inp => inp.disabled = false);
-      document.querySelectorAll(".t" + person.toLowerCase()).forEach(inp => inp.disabled = false);
-      document.querySelectorAll(".p" + person.toLowerCase()).forEach(inp => inp.disabled = false);
-      alert("Unlocked for Person " + person);
-    } else {
-      alert("Incorrect Passcode!");
+      document.querySelectorAll(".d" + person).forEach(i => i.disabled = false);
+      document.querySelectorAll(".t" + person).forEach(i => i.disabled = false);
+      document.querySelectorAll(".p" + person).forEach(i => i.disabled = false);
     }
   }
 
@@ -182,7 +180,6 @@
     });
     db.ref("expenses/" + month).set(rows)
       .then(() => {
-        alert("Updated successfully.");
         calculateTotals();
       })
       .catch(err => alert("Error updating data: " + err));

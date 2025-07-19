@@ -204,31 +204,38 @@
   });
 
   function exportFrozen() {
-    calculateTotals();
-    const clone = document.documentElement.cloneNode(true);
-    clone.querySelectorAll("script").forEach(s => s.remove());
-    clone.querySelectorAll("input").forEach(i => {
-      i.setAttribute("readonly", true);
-      i.style.border = "none";
-      i.style.background = "#fff";
-      i.style.pointerEvents = "none";
-    });
-    const html = "<!DOCTYPE html>\n" + clone.outerHTML;
-    const blob = new Blob([html], { type: "text/html" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "FrozenExpense.html";
-    a.click();
-  }
+      const clone = document.documentElement.cloneNode(true);
+      clone.querySelectorAll("script").forEach(s => s.remove());
+      clone.querySelectorAll("input").forEach(i => {
+        i.setAttribute("readonly", true);
+        i.style.border = "none";
+        i.style.background = "#fff";
+        i.style.pointerEvents = "none";
+      });
 
-  window.onload = () => {
-    const now = new Date();
-    const monthStr = now.toISOString().slice(0, 7);
-    monthSelector.value = monthStr;
-    loadData(monthStr);
-  };
+      const month = document.getElementById("monthSelector").value;
+      const heading = document.createElement("h2");
+      heading.textContent = "Expenses for " + month;
+      heading.style.textAlign = "center";
+      clone.querySelector(".container").insertBefore(heading, clone.querySelector("table"));
 
-  if (expenseBody.children.length === 0) addRow();
-</script>
+      const html = "<!DOCTYPE html>\n" + clone.outerHTML;
+      const blob = new Blob([html], { type: "text/html" });
+      const file = new File([blob], "FrozenExpense.html", { type: "text/html" });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({
+          files: [file],
+          title: "Monthly Expense Report",
+          text: "Sharing monthly expense HTML"
+        });
+      } else {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "FrozenExpense.html";
+        a.click();
+      }
+    }
+  </script>
 </body>
 </html>

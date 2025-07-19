@@ -13,7 +13,7 @@
       padding: 20px;
     }
     .container {
-      max-width: 900px;
+      max-width: 1200px;
       margin: auto;
       background: white;
       padding: 20px;
@@ -24,10 +24,11 @@
       width: 100%;
       border-collapse: collapse;
       margin-bottom: 20px;
+      font-size: 14px;
     }
     th, td {
       border: 1px solid #ccc;
-      padding: 10px;
+      padding: 8px;
       text-align: center;
     }
     input {
@@ -64,31 +65,25 @@
 <body>
 <div class="container">
   <h2>Month: <input type="month" id="monthSelector" /></h2>
-  <table id="expenseTable">
+  <table>
     <thead>
       <tr>
-        <th>Date</th>
-        <th>Particulars</th>
-        <th>Bhushan <button class="unlock-btn" onclick="unlock('A')">🔓</button></th>
-        <th>Dheeraj <button class="unlock-btn" onclick="unlock('B')">🔓</button></th>
-        <th>Saurabh <button class="unlock-btn" onclick="unlock('C')">🔓</button></th>
+        <th colspan="3">Bhushan <button class="unlock-btn" onclick="unlock('A')">🔓</button></th>
+        <th colspan="3">Dheeraj <button class="unlock-btn" onclick="unlock('B')">🔓</button></th>
+        <th colspan="3">Saurabh <button class="unlock-btn" onclick="unlock('C')">🔓</button></th>
+      </tr>
+      <tr>
+        <th>Date</th><th>Particular</th><th>Amount</th>
+        <th>Date</th><th>Particular</th><th>Amount</th>
+        <th>Date</th><th>Particular</th><th>Amount</th>
       </tr>
     </thead>
-    <tbody id="expenseBody">
-      <tr>
-        <td><input type="date"></td>
-        <td><input type="text" placeholder="Item name"></td>
-        <td><input type="number" class="pa" min="0" value="0" disabled></td>
-        <td><input type="number" class="pb" min="0" value="0" disabled></td>
-        <td><input type="number" class="pc" min="0" value="0" disabled></td>
-      </tr>
-    </tbody>
+    <tbody id="expenseBody"></tbody>
     <tfoot>
       <tr class="totals">
-        <td colspan="2">Total</td>
-        <td id="totalA">0</td>
-        <td id="totalB">0</td>
-        <td id="totalC">0</td>
+        <td colspan="2">Total</td><td id="totalA">0</td>
+        <td colspan="2">Total</td><td id="totalB">0</td>
+        <td colspan="2">Total</td><td id="totalC">0</td>
       </tr>
     </tfoot>
   </table>
@@ -124,6 +119,8 @@
   function unlock(person) {
     const entered = prompt("Enter passcode for Person " + person);
     if (entered === passcodes[person]) {
+      document.querySelectorAll(".d" + person.toLowerCase()).forEach(inp => inp.disabled = false);
+      document.querySelectorAll(".t" + person.toLowerCase()).forEach(inp => inp.disabled = false);
       document.querySelectorAll(".p" + person.toLowerCase()).forEach(inp => inp.disabled = false);
       alert("Unlocked for Person " + person);
     } else {
@@ -131,23 +128,27 @@
     }
   }
 
-  function addRow(date = "", part = "", a = 0, b = 0, c = 0) {
+  function addRow(dA = "", tA = "", a = 0, dB = "", tB = "", b = 0, dC = "", tC = "", c = 0) {
     const row = document.createElement("tr");
     row.innerHTML = `
-      <td><input type="date" value="${date}"></td>
-      <td><input type="text" value="${part}"></td>
-      <td><input type="number" class="pa" min="0" value="${a}" disabled></td>
-      <td><input type="number" class="pb" min="0" value="${b}" disabled></td>
-      <td><input type="number" class="pc" min="0" value="${c}" disabled></td>
+      <td><input type="date" class="dA" value="${dA}" disabled></td>
+      <td><input type="text" class="tA" value="${tA}" disabled></td>
+      <td><input type="number" class="pA" min="0" value="${a}" disabled></td>
+      <td><input type="date" class="dB" value="${dB}" disabled></td>
+      <td><input type="text" class="tB" value="${tB}" disabled></td>
+      <td><input type="number" class="pB" min="0" value="${b}" disabled></td>
+      <td><input type="date" class="dC" value="${dC}" disabled></td>
+      <td><input type="text" class="tC" value="${tC}" disabled></td>
+      <td><input type="number" class="pC" min="0" value="${c}" disabled></td>
     `;
     expenseBody.appendChild(row);
   }
 
   function calculateTotals() {
     let a = 0, b = 0, c = 0;
-    document.querySelectorAll(".pa").forEach(i => a += +i.value || 0);
-    document.querySelectorAll(".pb").forEach(i => b += +i.value || 0);
-    document.querySelectorAll(".pc").forEach(i => c += +i.value || 0);
+    document.querySelectorAll(".pA").forEach(i => a += +i.value || 0);
+    document.querySelectorAll(".pB").forEach(i => b += +i.value || 0);
+    document.querySelectorAll(".pC").forEach(i => c += +i.value || 0);
     totalA.textContent = a.toFixed(2);
     totalB.textContent = b.toFixed(2);
     totalC.textContent = c.toFixed(2);
@@ -168,11 +169,15 @@
     const rows = [...expenseBody.querySelectorAll("tr")].map(row => {
       const inputs = row.querySelectorAll("input");
       return {
-        date: inputs[0].value,
-        part: inputs[1].value,
+        dA: inputs[0].value,
+        tA: inputs[1].value,
         a: +inputs[2].value || 0,
-        b: +inputs[3].value || 0,
-        c: +inputs[4].value || 0
+        dB: inputs[3].value,
+        tB: inputs[4].value,
+        b: +inputs[5].value || 0,
+        dC: inputs[6].value,
+        tC: inputs[7].value,
+        c: +inputs[8].value || 0
       };
     });
     db.ref("expenses/" + month).set(rows)
@@ -189,9 +194,8 @@
       expenseBody.innerHTML = "";
       const data = snapshot.val();
       if (data && Array.isArray(data)) {
-        data.forEach(item => addRow(item.date, item.part, item.a, item.b, item.c));
+        data.forEach(item => addRow(item.dA, item.tA, item.a, item.dB, item.tB, item.b, item.dC, item.tC, item.c));
       } else {
-        // If no data, add one empty row
         addRow();
       }
       calculateTotals();
@@ -220,7 +224,6 @@
     a.click();
   }
 
-  // Load current month data on page load
   window.onload = () => {
     const now = new Date();
     const monthStr = now.toISOString().slice(0, 7);
@@ -228,7 +231,6 @@
     loadData(monthStr);
   };
 
-  // Add initial row if none
   if (expenseBody.children.length === 0) addRow();
 </script>
 </body>

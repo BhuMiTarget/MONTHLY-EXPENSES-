@@ -204,38 +204,47 @@
   });
 
   function exportFrozen() {
-      const clone = document.documentElement.cloneNode(true);
-      clone.querySelectorAll("script").forEach(s => s.remove());
-      clone.querySelectorAll("input").forEach(i => {
-        i.setAttribute("readonly", true);
-        i.style.border = "none";
-        i.style.background = "#fff";
-        i.style.pointerEvents = "none";
+    const clone = document.documentElement.cloneNode(true);
+
+    // Set month in export
+    const originalMonth = document.getElementById("monthSelector").value;
+    clone.querySelector("#monthSelector").value = originalMonth;
+
+    // Remove scripts
+    clone.querySelectorAll("script").forEach(s => s.remove());
+
+    // Freeze inputs
+    clone.querySelectorAll("input").forEach(i => {
+      i.setAttribute("readonly", true);
+      i.style.border = "none";
+      i.style.background = "#fff";
+      i.style.pointerEvents = "none";
+    });
+
+    // Add heading
+    const heading = document.createElement("h2");
+    heading.textContent = "Expenses for " + originalMonth;
+    heading.style.textAlign = "center";
+    clone.querySelector(".container").insertBefore(heading, clone.querySelector("table"));
+
+    // Download
+    const html = "<!DOCTYPE html>\n" + clone.outerHTML;
+    const blob = new Blob([html], { type: "text/html" });
+    const file = new File([blob], "FrozenExpense.html", { type: "text/html" });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({
+        files: [file],
+        title: "Monthly Expense Report",
+        text: "Sharing monthly expense HTML"
       });
-
-      const month = document.getElementById("monthSelector").value;
-      const heading = document.createElement("h2");
-      heading.textContent = "Expenses for " + month;
-      heading.style.textAlign = "center";
-      clone.querySelector(".container").insertBefore(heading, clone.querySelector("table"));
-
-      const html = "<!DOCTYPE html>\n" + clone.outerHTML;
-      const blob = new Blob([html], { type: "text/html" });
-      const file = new File([blob], "FrozenExpense.html", { type: "text/html" });
-
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        navigator.share({
-          files: [file],
-          title: "Monthly Expense Report",
-          text: "Sharing monthly expense HTML"
-        });
-      } else {
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = "FrozenExpense.html";
-        a.click();
-      }
+    } else {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "FrozenExpense.html";
+      a.click();
     }
-  </script>
+  }
+</script>
 </body>
 </html>

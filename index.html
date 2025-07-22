@@ -7,11 +7,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background: #f0f4f8;
-      padding: 20px;
-    }
+    body { font-family: 'Inter', sans-serif; background: #f0f4f8; padding: 20px; }
     .container {
       max-width: 1200px;
       margin: auto;
@@ -20,35 +16,13 @@
       border-radius: 16px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.1);
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 20px;
-      font-size: 14px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: center;
-    }
-    input {
-      width: 100%;
-      padding: 5px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-    }
-    input:disabled {
-      background: #eee;
-    }
-    .totals {
-      background: #e2e8f0;
-      font-weight: bold;
-    }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 14px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    input { width: 100%; padding: 5px; border-radius: 6px; border: 1px solid #ccc; }
+    input:disabled { background: #eee; }
+    .totals { background: #e2e8f0; font-weight: bold; }
     .per-head {
-      font-weight: 600;
-      background: #e6fffa;
-      padding: 15px;
-      border-radius: 10px;
+      font-weight: 600; background: #e6fffa; padding: 15px; border-radius: 10px;
     }
     button {
       padding: 10px 16px;
@@ -114,15 +88,17 @@
   const perHeadSummary = document.getElementById("perHeadSummary");
   const monthSelector = document.getElementById("monthSelector");
 
-  const passcodes = { A: "123A", B: "DS", C: "123S" };
-  const names = { A: "Bhushan", B: "Dheeraj", C: "Saurabh" };
+  const passcodes = { A: "123A", B: "123B", C: "123C" };
 
   function unlock(person) {
-    const entered = prompt("Enter passcode");
+    const entered = prompt("Enter passcode for " + person);
     if (entered === passcodes[person]) {
       document.querySelectorAll(".d" + person).forEach(i => i.disabled = false);
       document.querySelectorAll(".t" + person).forEach(i => i.disabled = false);
       document.querySelectorAll(".p" + person).forEach(i => i.disabled = false);
+      alert(person + " unlocked!");
+    } else {
+      alert("Incorrect passcode.");
     }
   }
 
@@ -164,9 +140,12 @@
       alert("Please select a month.");
       return;
     }
-    const rows = [...expenseBody.querySelectorAll("tr")].map(row => {
+
+    const rows = [...expenseBody.querySelectorAll("tr")];
+    const ref = db.ref("expenses/" + month);
+    rows.forEach(row => {
       const inputs = row.querySelectorAll("input");
-      return {
+      const entry = {
         dA: inputs[0].value,
         tA: inputs[1].value,
         a: +inputs[2].value || 0,
@@ -177,21 +156,22 @@
         tC: inputs[7].value,
         c: +inputs[8].value || 0
       };
+      ref.push(entry);
     });
-    db.ref("expenses/" + month).set(rows)
-      .then(() => {
-        calculateTotals();
-      })
-      .catch(err => alert("Error updating data: " + err));
+
+    alert("Data safely pushed.");
+    calculateTotals();
   }
 
   function loadData(month) {
     if (!month) return;
-    db.ref("expenses/" + month).on("value", snapshot => {
+    db.ref("expenses/" + month).once("value", snapshot => {
       expenseBody.innerHTML = "";
       const data = snapshot.val();
-      if (data && Array.isArray(data)) {
-        data.forEach(item => addRow(item.dA, item.tA, item.a, item.dB, item.tB, item.b, item.dC, item.tC, item.c));
+      if (data) {
+        Object.values(data).forEach(item => {
+          addRow(item.dA, item.tA, item.a, item.dB, item.tB, item.b, item.dC, item.tC, item.c);
+        });
       } else {
         addRow();
       }
@@ -205,45 +185,24 @@
 
   function exportFrozen() {
     const clone = document.documentElement.cloneNode(true);
-
-    // Set month in export
-    const originalMonth = document.getElementById("monthSelector").value;
-    clone.querySelector("#monthSelector").value = originalMonth;
-
-    // Remove scripts
     clone.querySelectorAll("script").forEach(s => s.remove());
-
-    // Freeze inputs
     clone.querySelectorAll("input").forEach(i => {
       i.setAttribute("readonly", true);
       i.style.border = "none";
       i.style.background = "#fff";
       i.style.pointerEvents = "none";
     });
-
-    // Add heading
+    const month = document.getElementById("monthSelector").value;
     const heading = document.createElement("h2");
-    heading.textContent = "Expenses for " + originalMonth;
+    heading.textContent = "Expenses for " + month;
     heading.style.textAlign = "center";
     clone.querySelector(".container").insertBefore(heading, clone.querySelector("table"));
-
-    // Download
     const html = "<!DOCTYPE html>\n" + clone.outerHTML;
     const blob = new Blob([html], { type: "text/html" });
-    const file = new File([blob], "FrozenExpense.html", { type: "text/html" });
-
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      navigator.share({
-        files: [file],
-        title: "Monthly Expense Report",
-        text: "Sharing monthly expense HTML"
-      });
-    } else {
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "FrozenExpense.html";
-      a.click();
-    }
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "FrozenExpense_" + month + ".html";
+    a.click();
   }
 </script>
 </body>
